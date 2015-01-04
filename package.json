@@ -1,0 +1,23 @@
+{
+  "name": "compiler",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LiangMingyang/compiler.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/LiangMingyang/compiler/issues"
+  },
+  "homepage": "https://github.com/LiangMingyang/compiler",
+  "dependencies": {
+    "lex": "^1.7.8",
+    "lodash": "^2.4.1"
+  }
+}
