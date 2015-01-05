@@ -157,69 +157,16 @@ var col = 1;
 var lexer = new Lexer();
 var res = [];
 var keyWord = {
-    "asm": 1,
-    "do": 2,
-    "if": 3,
-    "return": 4,
-    "typedef": 5,
-    "auto": 6,
-    "double": 7,
-    "inline": 8,
-    "short": 9,
-    "typeid": 10,
-    "bool": 11,
-    "dynamic_cast": 12,
-    "int": 13,
-    "signed": 14,
-    "typename": 15,
-    "break": 16,
-    "else": 17,
-    "long": 18,
-    "sizeof": 19,
-    "union": 20,
-    "case": 21,
-    "enum": 22,
-    "mutable": 23,
-    "static": 24,
-    "unsigned": 25,
-    "catch": 26,
-    "explicit": 27,
-    "namespace": 28,
-    "static_cast": 29,
-    "using": 30,
-    "char": 31,
-    "export": 32,
-    "new": 33,
-    "struct": 34,
-    "virtual": 35,
-    "class": 36,
-    "extern": 37,
-    "operator": 38,
-    "switch": 39,
-    "void": 40,
-    "const": 41,
-    "false": 42,
-    "private": 43,
-    "template": 44,
-    "volatile": 45,
-    "const_cast": 46,
-    "float": 47,
-    "protected": 48,
-    "this": 49,
-    "wchar_t": 50,
-    "continue": 51,
-    "for": 52,
-    "public": 53,
-    "throw": 54,
-    "while": 55,
-    "default": 56,
-    "friend": 57,
-    "register": 58,
-    "true": 59,
-    "delete": 60,
-    "goto": 61,
-    "reinterpret_cast": 62,
-    "try": 63
+    "const":1,
+    "int":2,
+    "void":3,
+    "if":4,
+    "else":5,
+    "while":6,
+    "main":7,
+    "return":8,
+    "printf":9,
+    "scanf":10
 };
 
 lexer.addRule(/[\t ]+/, function (token) { //这是空白字符
@@ -245,20 +192,20 @@ lexer.addRule(/\d+\b/, function (ele) {
     res.push(T);
 });
 
-lexer.addRule(/[\+\-\*\/]=/, function (ele) {
-    col += ele.length;
-    var T = new token(ele);
-    T.type = "TT_OP";
-    res.push(T);
-});
 
 lexer.addRule(/\/\/.*\n/, function (ele) {
     ++row;
     col = 1;
-    console.log(ele);
 });
 
-lexer.addRule(/(==|!=|\|\||[\+\-\*\/%=(){}\[\];'",])/, function (ele) {
+lexer.addRule(/".*"/, function(ele) {
+    col += ele.length;
+    var T = new token(ele);
+    T.type = "TT_ST";
+    res.push(T);
+});
+
+lexer.addRule(/(==|!=|>=|<=|[\+\-\*\/%=(){}\[\];,><])/, function (ele) {
     col += ele.length;
     var T = new token(ele);
     T.type = "TT_OP";
@@ -268,15 +215,12 @@ lexer.addRule(/\n/, function(token) {
     ++row;
     col = 1;
 });
+
 lexer.addRule(/$/, function() {
     console.log("词法分析结束");
 });
 
-lexer.setInput('// main function\nint main() { \nint a != 1;                  \nint b = 4;                  \nglobalVar = add(a, b);      \nreturn 0;                   \n}');
-try {
-    lexer.lex();
-}
-catch (e) {
-    console.log(e.message);
-}
+//lexer.setInput('// main function\nint main() { \nint a != 1;                  \nint b = 4;                  \nglobalVar = add(a, b);      \nreturn \"abc\";                   \n}');
+lexer.setInput('    const a= 1,b=0;');
+lexer.lex();
 console.log(res);
