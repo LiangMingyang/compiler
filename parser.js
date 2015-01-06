@@ -275,20 +275,22 @@ function Parser () {
                 ++this.cnt;
             }
             else if (this.token[this.cnt].value == 'void') {
-                ++this.cnt;
                 var child = {};
-                child.valueType = this.token[this.cnt];
+                child.valueType = this.token[this.cnt++];
                 child.parent = node;
-                this.funcDecParser(child); //TODO:函数声明解析
-                this.symbol[child.id] = 'function';
+                this.funcDecParser(child);
+                node.function.push(child);
+                node.symbol[child.id] = 'function';
             }
             else {
                 var child = {};
-                child.valueType = this.token[this.cnt];
+                child.valueType = this.token[this.cnt].value;
                 child.parent = node;
                 if (this.token[this.cnt + 2].value == '(') {
+                    ++this.cnt;
                     this.funcDecParser(child);
-                    this.symbol[child.id] = 'function';
+                    node.function.push(child);
+                    node.symbol[child.id] = 'function';
                 } else {
                     ++this.cnt;
                     var tmp = 0;
@@ -350,38 +352,62 @@ function Parser () {
         node.value = 0;
     };
 
-    this.argListParser = function (node) {
-        node.type = "形参列表";
-        node.children = [];
-        while(this.token[this.cnt].type != "TT_OP" || this.token[this.cnt].value != ")") {
+    this.funcDecParser = function(node) {
+        if(this.token[this.cnt].type != "TT_ID") {
+            throw Error("解析不了，在第" + this.cnt + "个token，这里应该是一个标识符");
+        }
+        if(node.parent.symbol[this.token[this.cnt].value]) {
+            throw Error("解析不了，在第" + this.cnt + "个token，这个标识符被定义过了");
+        }
+        node.id = this.token[this.cnt++].value;
+        node.type = "function";
+        node.symbol = {};
+        if(this.token[this.cnt].value != '(') {
+            throw Error("解析不了，在第" + this.cnt + "个token，这个应该是'('才对");
+        }
+        ++this.cnt;
+        node.parameter = [];
+        var cnt = 0;
+        while(this.token[this.cnt].value != ')') {
+            if(cnt > 0) {
+                if(this.token[this.cnt].value != ',')
+                    throw Error("解析不了，在第" + this.cnt + "个token，这个应该是','才对");
+                ++this.cnt;
+            }
+            ++cnt;
+            if(this.token[this.cnt].value != "int") {
+                throw Error("解析不了，在第" + this.cnt + "个token，这个应该是'int'才对");
+            }
+            ++this.cnt;
+            if(this.token[this.cnt].type != "TT_ID") {
+                throw Error("解析不了，在第" + this.cnt + "个token，这个应该是标识符才对");
+            }
+            if(node.symbol[this.token[this.cnt].value]) {
+                throw Error("解析不了，在第" + this.cnt + "个token，这个标识符已经被用过了");
+            }
             var child = {};
-            if(this.token[this.cnt].type == 'TT_KW' && this.token[this.cnt].value == 'int') { //TODO:目前只是int
-                child.valueType = this.token[this.cnt].value;
-            }
-            else throw Error("解析不了，在第"+this.cnt+"个token，不是合法的类型");
-            this.idParser(child);
+            child.type = "parameter";
+            child.id = this.token[this.cnt++].value;
+            child.valueType  = "int";
             child.parent = node;
-            node.children.push(child);
-            if(this.token[this.cnt].type == 'TT_OP' && this.token[this.cnt].value == ';') { //TODO:目前只是int
-                this.cnt++;
-            }
-            else throw Error("解析不了，在第"+this.cnt+"个token，应该是,");
+            node.parameter.push(child);
+            node.symbol[child.id] = "parameter";
         }
-    }; //形参列表
-
-    this.objParser = function (node) {
-        node.type = "运算对象";
-        if(this.token[this.cnt].type == "TT_Lit") {
-
+        ++this.cnt;
+        if(this.token[this.cnt].value != '{') {
+            throw Error("解析不了，在第" + this.cnt + "个token，这个应该是'{'才对");
         }
-
-    };   //
-
+        ++this.cnt;
+        while(this.token[this.cnt].value != '}') {
+            //TODO:复合语句分析
+        }
+        ++this.cnt;
+    }
 
 }
 
 var parser = new Parser();
-parser.setInput('    const a= 1,b=0,c=-1;const  Int   = -1994;int A,B,C;');
+parser.setInput('    const a= 1,b=0,c=-1;const  Int   = -1994;int A,B,C;int f(int a,int A){}');
 var root = {};
 parser.parse(root);
-console.log(root);
+console.log(root.function[0]);
