@@ -394,20 +394,111 @@ function Parser () {
             node.symbol[child.id] = "parameter";
         }
         ++this.cnt;
-        if(this.token[this.cnt].value != '{') {
-            throw Error("解析不了，在第" + this.cnt + "个token，这个应该是'{'才对");
-        }
-        ++this.cnt;
-        while(this.token[this.cnt].value != '}') {
-            //TODO:复合语句分析
-        }
-        ++this.cnt;
-    }
+        var child ={};
+        child.parent = node;
+        this.blockParser(child);
+        node.body = child;
+    };
 
+    this.statementParser = function (node) {
+        var child = {};
+        var tmp = 0;
+        child.parent = node;
+        switch (this.token[this.cnt].type) {
+            case "TT_KW":
+                switch (this.token[this.cnt].value) {
+                    case "if":
+                        this.ifParser(child); //TODO:if语句块
+                        break;
+                    case "while":
+                        this.whileParser(child);//TODO:while语句块
+                        break;
+                    case "scanf":
+                        this.scanfParser(child);//TODO:scanf语句
+                        break;
+                    case "printf":
+                        this.printfParser(child);//TODO:printf语句
+                        break;
+                    case "return":
+                        this.returnParser(child);//TODO:return语句
+                        break;
+                    case "const":
+                        ++this.cnt;
+                        tmp = 0;
+                        while (this.token[this.cnt].value != ";") {
+                            if (this.token[this.cnt].value == ",") {
+                                ++this.cnt;
+                            } else if(tmp > 0) {
+                                throw Error("解析不了，在第" + this.cnt + "个token，这里应该在前面有一个,才对");
+                            }
+                            ++tmp;
+                            child.valueType = 'int';
+                            this.constParser(child);
+                            node.const.push(child);
+                            node.symbol[child.id] = "const";
+                        }
+                        ++this.cnt;
+                        break;
+                    case "int":
+                        ++this.cnt;
+                        tmp = 0;
+                        while (this.token[this.cnt].value != ";") {
+                            if (this.token[this.cnt].value == ",") {
+                                ++this.cnt;
+                            } else if(tmp > 0) {
+                                throw Error("解析不了，在第" + this.cnt + "个token，这里应该在前面有一个,才对");
+                            }
+                            ++tmp;
+                            child.valueType = 'int';
+                            this.varParser(child);
+                            node.variable.push(child);
+                            node.symbol[child.id] = "variable";
+                        }
+                        ++this.cnt;
+                        break;
+                    default :
+                        throw Error("解析不了，在第" + this.cnt + "个token，不应该以这个关键字开头");
+                }
+                break;
+            default :
+                switch (this.token[this.cnt].value) {
+                    case '{':
+                        this.blockParser(child);
+                        break;
+                    default :
+                        this.expressParser(child); //TODO:表达式语句块
+                        break;
+                }
+                break;
+        }
+    };
+
+    this.blockParser = function (node) {
+        node.type = "语句块";
+        node.value = [];
+        if(this.token[this.cnt].value != '{') {
+            throw Error("解析不了，在第" + this.cnt + "个token，语句块的开始应该是'{'才对");
+        }
+        while(this.token[this.cnt].value != '}') {
+            var child = {};
+            child.parent = node;
+            this.statementParser(child);
+            node.value.push(child);
+        }
+        ++this.cnt;
+    };
+
+    this.expressParser = function (node) {
+        this.termParser(node);
+        if(this.token[this.cnt].value == '+' || this.token[this.cnt].value == '-') {
+            this.termParser(node);
+            this.node
+        }
+    }
 }
 
 var parser = new Parser();
-parser.setInput('    const a= 1,b=0,c=-1;const  Int   = -1994;int A,B,C;int f(int a,int A){}');
+parser.setInput('    const a= 1,b=0,c=-1;const  Int   = -1994;int A,B,C;int main(){int a;scanf(a);scanf(b);printf(a+b);}');
 var root = {};
 parser.parse(root);
 console.log(root.function[0]);
