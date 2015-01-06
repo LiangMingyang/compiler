@@ -170,7 +170,6 @@ var row = 1;
 function Parser () {
     this.token = [];
     this.cnt = 0;
-    this.global = {};
     this.lexer = new Lexer();
     var res = [];
     this.initLexer = function() {
@@ -234,7 +233,7 @@ function Parser () {
 
     this.parse = function (root) { //语法分析过程，对root节点进行建树操作，token应该在之前设定
         this.cnt = 0;
-        this.global = {};
+        this.local = {};
         this.token = [];
         this.lexer.lex();
         this.token = res;
@@ -251,23 +250,27 @@ function Parser () {
         node.const = [];
         node.variable = [];
         node.function = [];
+        node.local = {};
         while(this.cnt < this.token.length) {
             if (this.token[this.cnt].type != "TT_KW") {
                 throw Error("解析不了，在第" + this.cnt + "个token，声明的开始应该是关键字");
             }
             if (this.token[this.cnt].value == 'const') {
                 ++this.cnt;
+                var tmp = 0;
                 while (this.token[this.cnt].value != ";") {
                     if (this.token[this.cnt].value == ",") {
                         ++this.cnt;
-                    } else if(node.const.length) {
+                    } else if(tmp > 0) {
                         throw Error("解析不了，在第" + this.cnt + "个token，这里应该在前面有一个,才对");
                     }
+                    ++tmp;
                     var child = {};
                     child.valueType = 'int';
                     child.parent = node;
                     this.constParser(child);
                     node.const.push(child);
+                    node.local[child.id] = "const";
                 }
                 ++this.cnt;
             }
@@ -277,7 +280,7 @@ function Parser () {
                 child.valueType = this.token[this.cnt];
                 child.parent = node;
                 this.funcDecParser(child); //TODO:函数声明解析
-                this.global[child.id] = 'function';
+                this.local[child.id] = 'function';
             }
             else {
                 var child = {};
@@ -285,10 +288,10 @@ function Parser () {
                 child.parent = node;
                 if (this.token[this.cnt + 1].type == "TT_OP" && this.token[this.cnt + 1].value == '(') {
                     this.funcDecParser(child);
-                    this.global[child.id] = 'function';
+                    this.local[child.id] = 'function';
                 } else {
                     this.varDecParser(child); //TODO:变量声明解析
-                    this.global[child.id] = 'variable';
+                    this.local[child.id] = 'variable';
                 }
             }
         }
@@ -297,6 +300,9 @@ function Parser () {
     this.constParser = function(node) {
         if (this.token[this.cnt].type != "TT_ID") {
             throw Error("解析不了，在第" + this.cnt + "个token，这里应该是一个标识符才对");
+        }
+        if(node.parent.local[this.token[this.cnt].value]) {
+            throw Error("解析不了，在第" + this.cnt + "个token，这个标识符被定义过了");
         }
         node.id = this.token[this.cnt++].value;
         node.type = "const";
@@ -348,7 +354,7 @@ function Parser () {
 }
 
 var parser = new Parser();
-parser.setInput('    const a= 1,b=0,c=-1;');
+parser.setInput('    const a= 1,b=0,c=-1;const  Int   = -1994;');
 var root = {};
 parser.parse(root);
 console.log(root);
