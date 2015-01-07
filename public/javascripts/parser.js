@@ -34,11 +34,6 @@ function Parser () {
         throw Error("出现异常，在第" + this.cnt + "个token:\n"+JSON.stringify(this.top()) + "\n" + str);
     };
 
-    this.JSCode = "";
-
-    this.addState = function(str) {
-        this.JSCode += str;
-    }
 
     this.declareParser = function (node) {
         node.const = [];
@@ -165,7 +160,6 @@ function Parser () {
 
     this.statementParser = function (node) {
         var child = {};
-        var tmp = 0;
         child.parent = node;
         switch (this.top().type) {
             case "关键字":
@@ -256,7 +250,7 @@ function Parser () {
         }
     };
 
-    this.expressParser = this.logExpParser = function(node) {
+    this.expressParser = function (node) {
         node.type = "逻辑表达式";
         node.elements = [];
         do {
@@ -441,7 +435,7 @@ function Parser () {
                     var code = "";
                     code += node.value.value;
                     return code;
-                }
+                };
                 break;
             case '符号':
                 if(this.top().value == ';') {
@@ -486,7 +480,7 @@ function Parser () {
         if(this.read().value != "scanf") {
             this.throwError("应该是一个scanf");
         }
-        node.type = "scanf语句"
+        node.type = "scanf语句";
         if(this.read().value != "(") {
             this.throwError("至少scanf后面应该是一个(");
         }
@@ -571,7 +565,7 @@ function Parser () {
         if(this.read().value != "printf") {
             this.throwError("printf语句应该以printf开始");
         }
-        node.type = "printf语句"
+        node.type = "printf语句";
         if(this.read().value != "(") {
             this.throwError("至少printf后面应该是一个(");
         }
