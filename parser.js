@@ -403,23 +403,23 @@ function Parser () {
             case "关键字":
                 switch (this.token[this.cnt].value) {
                     case "if":
-                        this.ifParser(child); //TODO:if语句块
+                        this.ifParser(child);
                         node.statement.push(child);
                         break;
                     case "while":
-                        this.whileParser(child);//TODO:while语句块
+                        this.whileParser(child);
                         node.statement.push(child);
                         break;
                     case "scanf":
-                        this.scanfParser(child);//TODO:scanf语句
+                        this.scanfParser(child);
                         node.statement.push(child);
                         break;
                     case "printf":
-                        this.printfParser(child);//TODO:printf语句
+                        this.printfParser(child);
                         node.statement.push(child);
                         break;
                     case "return":
-                        this.returnParser(child);//TODO:return语句
+                        this.returnParser(child);
                         node.statement.push(child);
                         break;
                     case "const":
@@ -467,7 +467,7 @@ function Parser () {
                         node.statement.push(child);
                         break;
                     default :
-                        this.expressParser(child);
+                        this.expStaParser(child);
                         node.statement.push(child);
                         break;
                 }
@@ -491,16 +491,16 @@ function Parser () {
         ++this.cnt;
     };
 
-    this.expressParser = function (node) {
-        //TODO:表达式语句块
+    this.expStaParser = function (node) {
         node.type = "赋值语句";
         node.element = {};
         node.element.parent = node;
         this.assignExpParser(node.element);
         if(this.token[this.cnt++].value != ';') {
-            throw Error("解析不了，在第" + this.cnt + "个token，语句的末尾应该是';'才对");
+            throw Error("解析不了，在第" + this.cnt + "个token，语句应该以;结束");
         }
     };
+    this.expressParser = this.assignExpParser;
     this.assignExpParser = function(node) {
         node.type = "赋值表达式";
         node.elements = [];
@@ -553,35 +553,35 @@ function Parser () {
 
     this.factorParser = function (node) {
         node.type = "因子";
-        node.body = {};
-        node.body.parent = node;
+        node.value = {};
         switch (this.token[this.cnt].type) {
             case '标识符':
-                node.body.value = this.findID(node,this.token[this.cnt++].value);
-                if(node.body.value == undefined) {
+                node.value = this.findID(node,this.token[this.cnt++].value);
+                if(node.value == undefined) {
                     throw Error("解析不了，在第" + this.cnt + "个token，没有找到这个标识符");
                 }
-                node.body.type = node.body.value.type;
-                if(node.body.type == "function") {
+                if(node.value.type == "function") {
                     if(this.token[this.cnt++].value != '(') {
                         throw Error("解析不了，在第" + this.cnt + "个token，函数调用后面应该有'('");
                     }
-                    node.body.parameter = {};
-                    this.parParser(node.body.parameter);
+                    node.parameter = {};
+                    this.parParser(node.parameter);
                     if(this.token[this.cnt++].value != ')') {
                         throw Error("解析不了，在第" + this.cnt + "个token，参数调用最后应该有')'");
                     }
                 }
                 break;
             case '数字':
-                node.body.value = this.token[this.cnt++].value;
-                node.body.type = '数字';
+                node.value = this.token[this.cnt++];
                 break;
             case '符号':
+                if(this.token[this.cnt].value != ';') {
+                    return ;
+                }
                 if(this.token[this.cnt++].value != '(') {
                     throw Error("解析不了，在第" + this.cnt + "个token，如果以符号开头，应该使用'('");
                 }
-                this.expressParser(node.body);
+                this.expressParser(node.value);
                 if(this.token[this.cnt++].value != ')') {
                     throw Error("解析不了，在第" + this.cnt + "个token，匹配不到应有的')'");
                 }
@@ -591,7 +591,7 @@ function Parser () {
 
     this.parParser = function (node) {
         node.type = "值参数表";
-        node.body = [];
+        node.parameter = [];
         do {
             var child = {};
             child.parent = node;
@@ -599,7 +599,7 @@ function Parser () {
                 child.operator = this.token[this.cnt++].value;
             }
             this.expressParser(child);
-            node.body.push(child);
+            node.parameter.push(child);
         }while(this.token[this.cnt] == ',');
     };
 
@@ -607,11 +607,98 @@ function Parser () {
         if(this.token[this.cnt++].value != "scanf") {
             throw Error("解析不了，在第" + this.cnt + "个token，应该是一个scanf");
         }
+        node.type = "scanf语句"
         if(this.token[this.cnt++].value != "(") {
             throw Error("解析不了，在第" + this.cnt + "个token，至少scanf后面应该是一个(");
         }
-        if(this.token[this.cnt].type != "标识符") {
-            throw Error("解析不了，在第" + this.cnt + "个token，scanf应该是一个标识符");
+        node.parameter = [];
+        do {
+            if(this.token[this.cnt].value == ",") {
+                ++this.cnt;
+            }
+            if(this.token[this.cnt].type != "标识符") {
+                throw Error("解析不了，在第" + this.cnt + "个token，scanf的参数应该是标识符");
+            }
+            var child = this.findID(node,this.token[this.cnt].value);
+            if(child == undefined) {
+                throw Error("解析不了，在第" + this.cnt + "个token，没有找到这个标识符");
+            }
+            node.parameter.push(child);
+        } while(this.token[this.cnt].value == ",");
+        if(this.token[this.cnt++].value != ')') {
+            throw Error("解析不了，在第" + this.cnt + "个token，scanf的参数应该以)结束");
+        }
+        if(this.token[this.cnt++].value != ';') {
+            throw Error("解析不了，在第" + this.cnt + "个token，语句应该以;结束");
+        }
+    };
+    this.ifParser = function (node) {
+        node.type = "if语句块";
+        node.elements = [];
+        do {
+            var child = {};
+            child.parent = node;
+            if(this.token[this.cnt].value == "else") {
+                ++this.cnt;
+            }
+            if(this.token[this.cnt].value == "if") {
+                child.condition = {};
+                ++this.cnt;
+                if(this.token[this.cnt++].value != "(") {
+                    throw Error("解析不了，在第" + this.cnt + "个token，条件应该以'('开始");
+                }
+                this.expressParser(child.condition);
+                if(this.token[this.cnt++].value != ")") {
+                    throw Error("解析不了，在第" + this.cnt + "个token，条件应该以')'结束");
+                }
+            }
+            child.body = {};
+            this.blockParser(child.body);
+            node.elements.push(child);
+        }while(this.token[this.cnt].value == "else");
+    };
+    this.whileParser = function (node) {
+        node.type = "while语句块";
+        node.condition = {};
+        node.body = {};
+        if(this.token[this.cnt++].value != "while") {
+            throw Error("解析不了，在第" + this.cnt + "个token，while循环语句应该以while开始");
+        }
+        if(this.token[this.cnt++].value != "(") {
+            throw Error("解析不了，在第" + this.cnt + "个token，条件应该以'('开始");
+        }
+        this.expressParser(node.condition);
+        if(this.token[this.cnt++].value != ")") {
+            throw Error("解析不了，在第" + this.cnt + "个token，条件应该以')'结束");
+        }
+        this.blockParser(node.body);
+    };
+    this.returnParser = function (node) {
+        node.type = "return语句";
+        node.body = {};
+        if(this.token[this.cnt++].value != "return") {
+            throw Error("解析不了，在第" + this.cnt + "个token，return语句应该以return开始");
+        }
+        this.blockParser(node.body);
+        if(this.token[this.cnt++].value != ';') {
+            throw Error("解析不了，在第" + this.cnt + "个token，语句应该以;结束");
+        }
+    };
+    this.printfParser = function (node) {
+        if(this.token[this.cnt++].value != "printf") {
+            throw Error("解析不了，在第" + this.cnt + "个token，printf语句应该以printf开始");
+        }
+        node.type = "printf语句"
+        if(this.token[this.cnt++].value != "(") {
+            throw Error("解析不了，在第" + this.cnt + "个token，至少printf后面应该是一个(");
+        }
+        node.parameter = {};
+        this.parParser(node.parameter);
+        if(this.token[this.cnt++].value != ')') {
+            throw Error("解析不了，在第" + this.cnt + "个token，printf的参数应该以)结束");
+        }
+        if(this.token[this.cnt++].value != ';') {
+            throw Error("解析不了，在第" + this.cnt + "个token，语句应该以;结束");
         }
     };
 }
@@ -621,7 +708,7 @@ parser.setInput('    const a= 1,b=0,c=-1;const  Int   = -1994;int A,B,C;int main
 var root = {};
 try {
     parser.parse(root);
-    console.log(root);
+    console.log(root.symbol['main'].body.statement[0].element.elements[1].elements[1].elements[0].value);
 }
 catch (e) {
     console.log(e.message);
