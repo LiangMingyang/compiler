@@ -158,7 +158,7 @@ var keyWord = {
     "if":4,
     "else":5,
     "while":6,
-    "main":7,
+    //"main":7,
     "return":8,
     "printf":9,
     "scanf":10
@@ -181,10 +181,10 @@ function Parser () {
             col += ele.length;
             var T = new token(ele);
             if(keyWord[ele]) {
-                T.type = "TT_KW"
+                T.type = "关键字"
             }
             else {
-                T.type = "TT_ID";
+                T.type = "标识符";
             }
             res.push(T);
         });
@@ -192,7 +192,7 @@ function Parser () {
         this.lexer.addRule(/\d+\b/, function (ele) {
             col += ele.length;
             var T = new token(parseInt(ele));
-            T.type = "TT_Lit";
+            T.type = "数字";
             res.push(T);
         });
 
@@ -212,7 +212,7 @@ function Parser () {
         this.lexer.addRule(/(==|!=|>=|<=|[\+\-\*\/%=(){}\[\];,><])/, function (ele) {
             col += ele.length;
             var T = new token(ele);
-            T.type = "TT_OP";
+            T.type = "符号";
             res.push(T);
         });
         this.lexer.addRule(/\n/, function(token) {
@@ -238,12 +238,7 @@ function Parser () {
         this.lexer.lex();
         this.token = res;
         console.log(this.token);
-        try {
-            this.declareParser(root);
-        }
-        catch (e) {
-            console.log(e.message);
-        }
+        this.declareParser(root);
     };
 
     this.declareParser = function (node) {
@@ -252,7 +247,7 @@ function Parser () {
         node.function = [];
         node.symbol = {};
         while(this.cnt < this.token.length) {
-            if (this.token[this.cnt].type != "TT_KW") {
+            if (this.token[this.cnt].type != "关键字") {
                 throw Error("解析不了，在第" + this.cnt + "个token，声明的开始应该是关键字");
             }
             if (this.token[this.cnt].value == 'const') {
@@ -270,7 +265,7 @@ function Parser () {
                     child.parent = node;
                     this.constParser(child);
                     node.const.push(child);
-                    node.symbol[child.id] = "const";
+                    node.symbol[child.id] = child;
                 }
                 ++this.cnt;
             }
@@ -280,7 +275,7 @@ function Parser () {
                 child.parent = node;
                 this.funcDecParser(child);
                 node.function.push(child);
-                node.symbol[child.id] = 'function';
+                node.symbol[child.id] = child;
             }
             else {
                 var child = {};
@@ -290,7 +285,7 @@ function Parser () {
                     ++this.cnt;
                     this.funcDecParser(child);
                     node.function.push(child);
-                    node.symbol[child.id] = 'function';
+                    node.symbol[child.id] = child;
                 } else {
                     ++this.cnt;
                     var tmp = 0;
@@ -306,7 +301,7 @@ function Parser () {
                         child.parent = node;
                         this.varParser(child);
                         node.variable.push(child);
-                        node.symbol[child.id] = "variable";
+                        node.symbol[child.id] = child;
                     }
                     ++this.cnt;
                 }
@@ -315,7 +310,7 @@ function Parser () {
     };
 
     this.constParser = function(node) {
-        if (this.token[this.cnt].type != "TT_ID") {
+        if (this.token[this.cnt].type != "标识符") {
             throw Error("解析不了，在第" + this.cnt + "个token，这里应该是一个标识符才对");
         }
         if(node.parent.symbol[this.token[this.cnt].value]) {
@@ -331,7 +326,7 @@ function Parser () {
         if (this.token[this.cnt].value == "+" || this.token[this.cnt].value == "-") {
             sign = this.token[this.cnt++].value;
         }
-        if (this.token[this.cnt].type != "TT_Lit") {
+        if (this.token[this.cnt].type != "数字") {
             throw Error("解析不了，在第" + this.cnt + "个token，这里应该是个整数");
         }
         node.value = this.token[this.cnt++].value;
@@ -341,7 +336,7 @@ function Parser () {
     };
 
     this.varParser = function(node) {
-        if (this.token[this.cnt].type != "TT_ID") {
+        if (this.token[this.cnt].type != "标识符") {
             throw Error("解析不了，在第" + this.cnt + "个token，这里应该是一个标识符才对");
         }
         if(node.parent.symbol[this.token[this.cnt].value]) {
@@ -353,7 +348,7 @@ function Parser () {
     };
 
     this.funcDecParser = function(node) {
-        if(this.token[this.cnt].type != "TT_ID") {
+        if(this.token[this.cnt].type != "标识符") {
             throw Error("解析不了，在第" + this.cnt + "个token，这里应该是一个标识符");
         }
         if(node.parent.symbol[this.token[this.cnt].value]) {
@@ -379,7 +374,7 @@ function Parser () {
                 throw Error("解析不了，在第" + this.cnt + "个token，这个应该是'int'才对");
             }
             ++this.cnt;
-            if(this.token[this.cnt].type != "TT_ID") {
+            if(this.token[this.cnt].type != "标识符") {
                 throw Error("解析不了，在第" + this.cnt + "个token，这个应该是标识符才对");
             }
             if(node.symbol[this.token[this.cnt].value]) {
@@ -391,7 +386,7 @@ function Parser () {
             child.valueType  = "int";
             child.parent = node;
             node.parameter.push(child);
-            node.symbol[child.id] = "parameter";
+            node.symbol[child.id] = child;
         }
         ++this.cnt;
         var child ={};
@@ -405,22 +400,27 @@ function Parser () {
         var tmp = 0;
         child.parent = node;
         switch (this.token[this.cnt].type) {
-            case "TT_KW":
+            case "关键字":
                 switch (this.token[this.cnt].value) {
                     case "if":
                         this.ifParser(child); //TODO:if语句块
+                        node.statement.push(child);
                         break;
                     case "while":
                         this.whileParser(child);//TODO:while语句块
+                        node.statement.push(child);
                         break;
                     case "scanf":
                         this.scanfParser(child);//TODO:scanf语句
+                        node.statement.push(child);
                         break;
                     case "printf":
                         this.printfParser(child);//TODO:printf语句
+                        node.statement.push(child);
                         break;
                     case "return":
                         this.returnParser(child);//TODO:return语句
+                        node.statement.push(child);
                         break;
                     case "const":
                         ++this.cnt;
@@ -435,7 +435,7 @@ function Parser () {
                             child.valueType = 'int';
                             this.constParser(child);
                             node.const.push(child);
-                            node.symbol[child.id] = "const";
+                            node.symbol[child.id] = child;
                         }
                         ++this.cnt;
                         break;
@@ -452,7 +452,7 @@ function Parser () {
                             child.valueType = 'int';
                             this.varParser(child);
                             node.variable.push(child);
-                            node.symbol[child.id] = "variable";
+                            node.symbol[child.id] = child;
                         }
                         ++this.cnt;
                         break;
@@ -464,9 +464,11 @@ function Parser () {
                 switch (this.token[this.cnt].value) {
                     case '{':
                         this.blockParser(child);
+                        node.statement.push(child);
                         break;
                     default :
-                        this.expressParser(child); //TODO:表达式语句块
+                        this.expressParser(child);
+                        node.statement.push(child);
                         break;
                 }
                 break;
@@ -475,30 +477,152 @@ function Parser () {
 
     this.blockParser = function (node) {
         node.type = "语句块";
-        node.value = [];
-        if(this.token[this.cnt].value != '{') {
+        node.const = [];
+        node.function = [];
+        node.variable = [];
+        node.statement = [];
+        node.symbol = {};
+        if(this.token[this.cnt++].value != '{') {
             throw Error("解析不了，在第" + this.cnt + "个token，语句块的开始应该是'{'才对");
         }
         while(this.token[this.cnt].value != '}') {
-            var child = {};
-            child.parent = node;
-            this.statementParser(child);
-            node.value.push(child);
+            this.statementParser(node);
         }
         ++this.cnt;
     };
 
     this.expressParser = function (node) {
-        this.termParser(node);
-        if(this.token[this.cnt].value == '+' || this.token[this.cnt].value == '-') {
-            this.termParser(node);
-            this.node
+        //TODO:表达式语句块
+        node.type = "赋值语句";
+        node.element = {};
+        node.element.parent = node;
+        this.assignExpParser(node.element);
+        if(this.token[this.cnt++].value != ';') {
+            throw Error("解析不了，在第" + this.cnt + "个token，语句的末尾应该是';'才对");
         }
-    }
+    };
+    this.assignExpParser = function(node) {
+        node.type = "赋值表达式";
+        node.elements = [];
+        do {
+            var child = {};
+            child.parent = node;
+            if(this.token[this.cnt].value == '=') {
+                child.operator = this.token[this.cnt++].value;
+            }
+            this.adExpParser(child); //进入加减表达式解析
+            node.elements.push(child);
+        }while(this.token[this.cnt].value == '=');
+    };
+    this.adExpParser = function (node) {
+        node.type = "加减表达式";
+        node.elements = [];
+        do {
+            var child = {};
+            child.parent = node;
+            if(this.token[this.cnt].value == '+' || this.token[this.cnt].value == '-') {
+                child.operator = this.token[this.cnt++].value;
+            }
+            this.productExpParser(child); //进入乘除表达式解析
+            node.elements.push(child);
+        }while(this.token[this.cnt].value == '+' || this.token[this.cnt].value == '-');
+    };
+
+    this.productExpParser = function (node) {
+        node.type = "乘除表达式";
+        node.elements = [];
+        do {
+            var child = {};
+            child.parent = node;
+            if(this.token[this.cnt].value == '*' || this.token[this.cnt].value == '/' || this.token[this.cnt].value == '%') {
+                child.operator = this.token[this.cnt++].value;
+            }
+            this.factorParser(child); //进入因子解析
+            node.elements.push(child);
+        }while(this.token[this.cnt].value == '*' || this.token[this.cnt].value == '/' || this.token[this.cnt].value == '%');
+    };
+
+    this.findID = function (node,id) {
+        if(node) {
+            if(node.symbol && node.symbol[id]) {
+                return node.symbol[id];
+            }
+            else return this.findID(node.parent,id);
+        } else return undefined;
+    };
+
+    this.factorParser = function (node) {
+        node.type = "因子";
+        node.body = {};
+        node.body.parent = node;
+        switch (this.token[this.cnt].type) {
+            case '标识符':
+                node.body.value = this.findID(node,this.token[this.cnt++].value);
+                if(node.body.value == undefined) {
+                    throw Error("解析不了，在第" + this.cnt + "个token，没有找到这个标识符");
+                }
+                node.body.type = node.body.value.type;
+                if(node.body.type == "function") {
+                    if(this.token[this.cnt++].value != '(') {
+                        throw Error("解析不了，在第" + this.cnt + "个token，函数调用后面应该有'('");
+                    }
+                    node.body.parameter = {};
+                    this.parParser(node.body.parameter);
+                    if(this.token[this.cnt++].value != ')') {
+                        throw Error("解析不了，在第" + this.cnt + "个token，参数调用最后应该有')'");
+                    }
+                }
+                break;
+            case '数字':
+                node.body.value = this.token[this.cnt++].value;
+                node.body.type = '数字';
+                break;
+            case '符号':
+                if(this.token[this.cnt++].value != '(') {
+                    throw Error("解析不了，在第" + this.cnt + "个token，如果以符号开头，应该使用'('");
+                }
+                this.expressParser(node.body);
+                if(this.token[this.cnt++].value != ')') {
+                    throw Error("解析不了，在第" + this.cnt + "个token，匹配不到应有的')'");
+                }
+                break;
+        }
+    };
+
+    this.parParser = function (node) {
+        node.type = "值参数表";
+        node.body = [];
+        do {
+            var child = {};
+            child.parent = node;
+            if(this.token[this.cnt].value == ',') {
+                child.operator = this.token[this.cnt++].value;
+            }
+            this.expressParser(child);
+            node.body.push(child);
+        }while(this.token[this.cnt] == ',');
+    };
+
+    this.scanfParser = function (node) {
+        if(this.token[this.cnt++].value != "scanf") {
+            throw Error("解析不了，在第" + this.cnt + "个token，应该是一个scanf");
+        }
+        if(this.token[this.cnt++].value != "(") {
+            throw Error("解析不了，在第" + this.cnt + "个token，至少scanf后面应该是一个(");
+        }
+        if(this.token[this.cnt].type != "标识符") {
+            throw Error("解析不了，在第" + this.cnt + "个token，scanf应该是一个标识符");
+        }
+    };
 }
 
 var parser = new Parser();
-parser.setInput('    const a= 1,b=0,c=-1;const  Int   = -1994;int A,B,C;int main(){int a;scanf(a);scanf(b);printf(a+b);}');
+parser.setInput('    const a= 1,b=0,c=-1;const  Int   = -1994;int A,B,C;int main(int a,int b){int a,c;const b=0;a=b+1;}');
 var root = {};
-parser.parse(root);
-console.log(root.function[0]);
+try {
+    parser.parse(root);
+    console.log(root);
+}
+catch (e) {
+    console.log(e.message);
+}
