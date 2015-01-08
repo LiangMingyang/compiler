@@ -18,22 +18,22 @@ function Parser () {
         this.cnt = 0;
         this.symbol = {};
         this.token = this.lexer.lex();
-        console.log(this.token);
         this.declareParser(root);
     };
 
     this.top = function() {
+        if(this.cnt>=this.token.length) throw Error("程序过早结束");
         return this.token[this.cnt];
     };
 
     this.read = function() {
+        if(this.cnt>=this.token.length) throw Error("程序过早结束");
         return this.token[this.cnt++];
     };
     
     this.throwError = function (str) {
         throw Error("出现异常，在第" + this.cnt + "个token:\n"+JSON.stringify(this.top()) + "\n" + str);
     };
-
 
     this.declareParser = function (node) {
         node.const = [];
@@ -62,6 +62,7 @@ function Parser () {
 
         node.genJSCode = function () {
             var code = "";
+            code += "function printf() {for(var i in arguments) {console.log(arguments[i]);}}";
             this.variable.forEach(function(ele){
                 code += "var "+ele.id+"="+ele.value+";";
             });
@@ -276,15 +277,22 @@ function Parser () {
 
     this.expStaParser = function (node) {
         node.type = "表达式语句";
-        node.element = {};
-        node.element.parent = node;
-        this.expressParser(node.element);
+        node.elements = [];
+        do {
+            if(this.top().value == ',')this.read();
+            var child = {};
+            child.parent = node;
+            this.expressParser(child);
+            node.elements.push(child);
+        }while(this.top().value == ',');
         if(this.read().value != ';') {
             this.throwError("语句应该以;结束");
         }
         node.genJSCode = function() {
             var code = "";
-            code += node.element.genJSCode();
+            node.elements.forEach(function (ele) {
+                code += ele.genJSCode();
+            });
             code += ";";
             return code;
         }
@@ -409,6 +417,7 @@ function Parser () {
                         this.throwError("函数调用后面应该有'('");
                     }
                     node.parameter = {};
+                    node.parameter.parent = node;
                     this.parParser(node.parameter);
                     if(this.read().value != ')') {
                         this.throwError("参数调用最后应该有')'");
@@ -444,12 +453,20 @@ function Parser () {
                 if(this.read().value != '(') {
                     this.throwError("如果以符号开头，应该使用'('");
                 }
-                node.value = node;
+                node.value.parent = node;
                 this.expressParser(node.value);
                 if(this.read().value != ')') {
                     this.throwError("匹配不到应有的')'");
                 }
                 node.genJSCode = node.value.genJSCode;
+                break;
+            case '字符串':
+                node.value = this.read();
+                node.genJSCode = function() {
+                    var code = "";
+                    code += node.value.value;
+                    return code;
+                };
                 break;
         }
     };
@@ -466,7 +483,7 @@ function Parser () {
             }
             this.expressParser(child);
             node.parameter.push(child);
-        }while(this.top() == ',');
+        }while(this.top().value == ',');
         node.genJSCode = function() {
             var code = "";
             node.parameter.forEach(function(ele) {
@@ -504,6 +521,16 @@ function Parser () {
         if(this.read().value != ';') {
             this.throwError("语句应该以;结束");
         }
+        node.genJSCode = function () {
+            var code = "";
+            code += 'scanf(';
+            node.parameter.forEach(function (ele) {
+                code += ele.id;
+                code += ',';
+            });
+            code += ');';
+            return code;
+        }
     };
 
     this.ifParser = function (node) {
@@ -530,6 +557,20 @@ function Parser () {
             this.blockParser(child.body);
             node.elements.push(child);
         }while(this.top().value == "else");
+        node.genJSCode = function () {
+            var list = [];
+            node.elements.forEach(function (ele) {
+                var code = '';
+                if(ele.condition) {
+                    code += 'if(';
+                    code += ele.condition.genJSCode();
+                    code += ')';
+                }
+                code += ele.body.genJSCode();
+                list.push(code);
+            });
+            return list.join(' else ');
+        }
     };
 
     this.whileParser = function (node) {
@@ -547,18 +588,34 @@ function Parser () {
             this.throwError("条件应该以')'结束");
         }
         this.blockParser(node.body);
+        node.genJSCode = function () {
+            var code ="";
+            code += 'while(';
+            code += node.condition.genJSCode();
+            code += ')';
+            code += node.body.genJSCode();
+            return code;
+        }
     };
 
     this.returnParser = function (node) {
         node.type = "return语句";
         node.body = {};
+        node.body.parent = node;
         if(this.read().value != "return") {
             this.throwError("return语句应该以return开始");
         }
-        this.blockParser(node.body);
+        this.expressParser(node.body);
         if(this.read().value != ';') {
             this.throwError("语句应该以;结束");
         }
+        node.genJSCode = function () {
+            var code = "";
+            code += "return ";
+            code += node.body.genJSCode();
+            code += ';';
+            return code;
+        };
     };
 
     this.printfParser = function (node) {
@@ -570,6 +627,7 @@ function Parser () {
             this.throwError("至少printf后面应该是一个(");
         }
         node.parameter = {};
+        node.parameter.parent = node;
         this.parParser(node.parameter);
         if(this.read().value != ')') {
             this.throwError("printf的参数应该以)结束");
@@ -577,17 +635,14 @@ function Parser () {
         if(this.read().value != ';') {
             this.throwError("语句应该以;结束");
         }
+        node.genJSCode = function () {
+            var code = "";
+            code += 'printf(';
+            code += node.parameter.genJSCode();
+            code += ');';
+            return code;
+        };
     };
 }
 
-var parser = new Parser();
-parser.setInput('    const a= 1,b=0,c=-1;const ;int A,B,C;int add(int a,int b){}int main() {int a;a = (b+1)+add() ;}');
-var root = {};
-try {
-    parser.parse(root);
-    console.log(root.function[0].body);
-    console.log(root.genJSCode());
-}
-catch (e) {
-    console.log(e.message);
-}
+module.exports = Parser;
