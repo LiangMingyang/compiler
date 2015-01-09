@@ -19,6 +19,7 @@
                 id:"input",
                 is_editable:true,
                 allow_resize:"no",
+                change_callback:'exec',
                 toolbar:"search"
             });
             editAreaLoader.init({
@@ -36,6 +37,7 @@
                 allow_resize:"no"
             });
         };
+        window.onkeydown = exec;
     </script>
 </head>
 <body>
@@ -56,18 +58,18 @@
                         <a class="dropdown-toggle" data-toggle="dropdown" href="#">下拉</a>
                         <ul class="dropdown-menu">
                             <li>
-                                <a href="#">操作</a>
+                                <a href="#">这个网页</a>
                             </li>
                             <li>
-                                <a href="#">设置栏目</a>
+                                <a href="#">就是我的</a>
                             </li>
                             <li>
-                                <a href="#">更多设置</a>
+                                <a href="#">编译原理</a>
                             </li>
                             <li class="divider">
                             </li>
                             <li>
-                                <a href="#">分割线</a>
+                                <a href="#">大作业啦</a>
                             </li>
                         </ul>
                     </li>
@@ -101,8 +103,8 @@
         </div>
         <div class="row-fluid">
             <div class="span12 column">
-                <button id = "button" onclick="this.style.display='none';document.getElementById('root').style.display='block';" class="btn btn-primary" type="button">语法树</button>
-                <button class="btn btn-link" type="button">下载<strong>PCODE</strong></button>
+                <button class="btn btn-link" type="button"><strong>PCODE</strong></button>
+                <button id = "button" onclick="this.style.display='none';document.getElementById('root').style.display='block';" class="btn btn-primary" type="button" style="display: flex">语法树</button>
             </div>
             <div id = "root" style="display: none">
             </div>

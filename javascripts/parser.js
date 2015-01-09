@@ -423,6 +423,7 @@ function Parser () {
                     }
                     node.genJSCode = function() {
                         var code ="";
+                        if(node.operator)code += node.operator;
                         code += node.value.id;
                         code += "(";
                         code += node.parameter.genJSCode();
@@ -432,6 +433,7 @@ function Parser () {
                 } else {
                     node.genJSCode = function() {
                         var code = "";
+                        if(node.operator)code += node.operator;
                         code += node.value.id;
                         return code;
                     }
@@ -441,6 +443,7 @@ function Parser () {
                 node.value = this.read();
                 node.genJSCode = function() {
                     var code = "";
+                    if(node.operator)code += node.operator;
                     code += node.value.value;
                     return code;
                 };
@@ -457,12 +460,20 @@ function Parser () {
                 if(this.read().value != ')') {
                     this.throwError("匹配不到应有的')'");
                 }
-                node.genJSCode = node.value.genJSCode;
+                node.genJSCode = function() {
+                    var code = "";
+                    if(node.operator)code += node.operator;
+                    code += '(';
+                    code += node.value.genJSCode;
+                    code += ')';
+                    return code;
+                };
                 break;
             case '字符串':
                 node.value = this.read();
                 node.genJSCode = function() {
                     var code = "";
+                    if(node.operator)code += node.operator;
                     code += node.value.value;
                     return code;
                 };
@@ -512,6 +523,7 @@ function Parser () {
             if(child == undefined) {
                 this.throwError("没有找到这个标识符");
             }
+            this.read();
             node.parameter.push(child);
         } while(this.top().value == ",");
         if(this.read().value != ')') {
@@ -522,12 +534,9 @@ function Parser () {
         }
         node.genJSCode = function () {
             var code = "";
-            code += 'scanf(';
             node.parameter.forEach(function (ele) {
-                code += ele.id;
-                code += ',';
+                code += ele.id+"=read();";
             });
-            code += ');';
             return code;
         }
     };
