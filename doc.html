@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>编译器</title>
+    <link rel="stylesheet" href="./css/bootstrap.min.css">
+    <link rel="stylesheet" href="./css/bootstrap-responsive.min.css">
+    <link rel="stylesheet" href="./css/bootstrap-theme.min.css">
+    <link rel="stylesheet" href="./css/style.css">
+    <script src="./javascripts/jquery.min.js"></script>
+    <script src="./javascripts/bootstrap.min.js"></script>
+    <script src="./javascripts/lexer.js"></script>
+    <script src="./javascripts/parser.js"></script>
+    <script src="./javascripts/main.js"></script>
+    <script src="./javascripts/prettyprint.js"></script>
+    <script src="./javascripts/edit_area/edit_area_full.js"></script>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row-fluid">
+            <div class="span12">
+                <ul class="nav nav-tabs">
+                    <li>
+                        <a href="#">编译器</a>
+                    </li>
+                    <li class="active">
+                        <a href="./doc.html">文档</a>
+                    </li>
+                    <li class="disabled">
+                        <a href="#">作者</a>
+                    </li>
+                    <li class="dropdown pull-right">
+                        <a class="dropdown-toggle" data-toggle="dropdown" href="#">下拉</a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a href="#">这个网页</a>
+                            </li>
+                            <li>
+                                <a href="#">就是我的</a>
+                            </li>
+                            <li>
+                                <a href="#">编译原理</a>
+                            </li>
+                            <li class="divider">
+                            </li>
+                            <li>
+                                <a href="#">大作业啦</a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="row-fluid">
+            <div class="span12 column">
+                <div class="view">
+                <div class="hero-unit">
+                <h1>C-0文法    </h1>
+                <p>关键字: <strong>const</strong>, <strong>int</strong>, <strong>void</strong>, <strong>if</strong>, <strong>else</strong>, <strong>while</strong>, <strong>main</strong>, <strong>return</strong>, <strong>printf</strong>, <strong>scanf</strong></p>
+                <p><code>加法运算符</code>  ::=  <strong>+</strong>|<strong>-</strong></p>
+                <p><code>逻辑运算符</code> ::= <strong>||</strong> | <strong>&amp;&amp;</strong></p>
+                <p><code>乘法运算符</code> ::=  * | /</p>
+                <p><code>关系运算符</code> ::=  <strong>&lt;</strong>｜<strong>&gt;</strong>｜<strong>&lt;=</strong>｜<strong>&gt;=</strong>｜<strong>!＝</strong>｜<strong>＝＝</strong></p>
+                <p><code>赋值运算符</code> ::= <strong>=</strong></p>
+                <p><code>字符</code>   ::=  <strong>_</strong> ｜<strong>a</strong>｜．．．｜<strong>z</strong>｜<strong>A</strong>｜．．．｜<strong>Z</strong></p>
+                <p><code>数字</code> ::=  <strong>0</strong>｜<code>非零数字</code></p>
+                <p><code>非零数字</code>    ::= <strong>1</strong>｜．．．｜<strong>9</strong></p>
+                <p><code>专用符号</code> ::=  <strong>(</strong>｜<strong>)</strong>｜<strong>{</strong>｜<strong>}</strong>｜<strong>,</strong>｜<strong>;</strong>｜<strong>＝</strong></p>
+                <p><code>字符串</code> ::= "{<code>合法字符</code>}"</p>
+                <p><code>程序</code> ::=  [<code>常量声明</code>][<code>变量声明</code>][<code>函数定义部分</code>]</p>
+                <p><code>标识符</code> ::=  <code>字符</code>{<code>字符</code>|<code>数字</code>}</p>
+                <p><code>常量声明</code>  ::=  <strong>const</strong> <code>常量定义</code>{<strong>,</strong><code>常量定义</code>}<strong>;</strong></p>
+                <p><code>常量定义</code>  ::=  <code>标识符</code> <strong>＝</strong> <code>整数</code></p>
+                <p><code>整数</code> ::=  [+|-]<code>数字</code></p>
+                <p><code>变量声明</code> ::= <strong>int</strong> <code>标识符</code>{<strong>,</strong><code>标识符</code>}<strong>;</strong></p>
+                <p><code>函数定义部分</code> ::= (<strong>int</strong>｜<strong>void</strong>) <code>标识符</code> <code>参数表</code> <code>语句块</code></p>
+                <p><code>参数表</code> ::=  <strong>(int</strong> <code>标识符</code>｛<strong>,int</strong> <code>标识符</code>} <strong>)</strong>| <strong>()</strong></p>
+                <p><code>语句块</code> ::= <strong>{</strong> {<code>语句</code>} <strong>}</strong></p>
+                <p><code>语句</code> ::=  <code>变量声明</code>|<code>常量声明</code>|<code>条件语句</code>｜<code>循环语句</code>｜<code>语句块</code>｜<code>赋值语句</code>| <code>返回语句</code>｜<code>读语句</code>｜<code>写语句</code></p>
+                <p><code>赋值语句</code> ::= <code>表达式</code><strong>;</strong></p>
+                <p><code>表达式</code> ::= <code>关系表达式</code> { <code>逻辑运算符</code> <code>表达式</code> }</p>
+                <p><code>关系表达式</code> ::= <code>赋值表达式</code> { <code>关系运算符</code> <code>关系表达式</code> }</p>
+                <p><code>赋值表达式</code> ::= <code>加减表达式</code> [<code>赋值运算符</code> <code>赋值表达式</code>]</p>
+                <p><code>加减表达式</code> ::= <code>乘除表达式</code> [<code>加法运算符</code> <code>乘除表达式</code>]</p>
+                <p><code>乘除表达式</code> ::= <code>因子</code> [<code>乘法运算符</code> <code>乘除表达式</code>]</p>
+                <p><code>因子</code> ::= <code>标识符</code>[<strong>(</strong><code>值参数表</code> <strong>)</strong>] |<strong>(</strong><code>赋值表达式</code><strong>)</strong> | <code>整数</code></p>
+                <p><code>值参数表</code> ::=  <code>表达式</code>{<strong>,</strong><code>表达式</code>}｜<code>空</code></p>
+                <p><code>条件语句</code> ::=  <strong>if(</strong><code>条件</code><strong>)</strong><code>语句</code>(<strong>else</strong><code>语句</code>)</p>
+                <p><code>条件</code> ::=  <code>表达式</code>{ <code>关系运算符</code> <code>表达式</code>}</p>
+                <p><code>循环语句</code> ::=  <strong>while(</strong><code>条件</code><strong>)</strong><code>语句</code></p>
+                <p><code>读语句</code> ::=  <strong>scanf(</strong><code>标识符</code><strong>);</strong></p>
+                <p><code>写语句</code> ::=  <strong>printf(</strong>[<code>字符串</code>,][<code>expression</code>]<strong>);</strong>  //<em>当出现字符串时，就加印字符串, 之后打印表达式的值；</em></p>
+                <p><code>返回语句</code> ::=  <strong>return</strong> [<code>表达式</code>] <strong>;</strong> </p>
+                    <h1>使用说明</h1>
+                    <h2 class="note-title">即时在线编译运行系统</h2>
+                    <p>不需要做什么，打开网页然后在编辑框里面写东西就是了</p>
+                    <h2>可能存在的bug</h2>
+                    <p>可能程序修改了，但是结果没有改变，鼠标点一下编辑框外面就行了。时间太紧，结果没来的及写文档，这可真的是花了我不少心血啊！</p>
+                </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

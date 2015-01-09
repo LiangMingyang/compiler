@@ -36,17 +36,14 @@ function exec(editorID) {
         if(parseTree.children && parseTree.children.length) parseTree.removeChild(parseTree.children[0]);
         parseTree.appendChild(prettyPrint(root));
         parseTree.style.display='none';
-        console.log(root.genJSCode());
         try {
             eval(root.genJSCode());
         }
         catch (e) {
-            //console.log(e.message);
             printf(e.message);
         }
     }
     catch (e) {
-        //console.log(e.message);
         printf(e.message);
     }
 }
