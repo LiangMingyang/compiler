@@ -30,7 +30,6 @@ function exec(editorID) {
     };
     try {
         parser.parse(root);
-        //console.log(prettyPrint(root));
         document.getElementById('button').style.display='block';
         var parseTree = document.getElementById('root');
         if(parseTree.children && parseTree.children.length) parseTree.removeChild(parseTree.children[0]);
