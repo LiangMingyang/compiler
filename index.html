@@ -2,7 +2,7 @@
 <html>
 <head lang="en">
     <meta charset="UTF-8">
-    <title>编译器</title>
+    <title>编译原理大作业</title>
     <link rel="stylesheet" href="./css/bootstrap.min.css">
     <link rel="stylesheet" href="./css/bootstrap-responsive.min.css">
     <link rel="stylesheet" href="./css/bootstrap-theme.min.css">
@@ -12,6 +12,7 @@
     <script src="./javascripts/parser.js"></script>
     <script src="./javascripts/main.js"></script>
     <script src="./javascripts/prettyprint.js"></script>
+    <script src="./javascripts/base64.min.js"></script>
     <script src="./javascripts/edit_area/edit_area_full.js"></script>
     <script language="JavaScript" type="text/javascript">
         window.onload = function() {
@@ -103,7 +104,7 @@
         </div>
         <div class="row-fluid">
             <div class="span12 column">
-                <button class="btn btn-link" type="button"><strong>PCODE</strong></button>
+                <a id="pcode" class="btn btn-link" type="button" href="data:;base64,5pyq57yW6K+R" download="pcode.txt"><strong>PCODE</strong></a>
                 <button id = "button" onclick="this.style.display='none';document.getElementById('root').style.display='block';" class="btn btn-primary" type="button" style="display: flex">语法树</button>
             </div>
             <div id = "root" style="display: none">

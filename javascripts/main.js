@@ -20,7 +20,6 @@ function exec(editorID) {
         }
         print += list.join(' ');
         print += '\n';
-        editAreaLoader.setValue('output', print);
     };
     var read = function() {
         if (scanCnt < item.length && item[scanCnt].type != "数字") {
@@ -28,6 +27,7 @@ function exec(editorID) {
         }
         return parseInt(item[scanCnt++].value);
     };
+    editAreaLoader.setValue('output', print);
     try {
         parser.parse(root);
         document.getElementById('button').style.display='block';
@@ -35,6 +35,8 @@ function exec(editorID) {
         if(parseTree.children && parseTree.children.length) parseTree.removeChild(parseTree.children[0]);
         parseTree.appendChild(prettyPrint(root));
         parseTree.style.display='none';
+        var pcode = document.getElementById('pcode');
+        pcode.href = "data:;base64,"+Base64.encode(root.genPcode());
         try {
             eval(root.genJSCode());
         }
@@ -45,5 +47,6 @@ function exec(editorID) {
     catch (e) {
         printf(e.message);
     }
+    editAreaLoader.setValue('output', print);
 }
 

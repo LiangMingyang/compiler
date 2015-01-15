@@ -4,11 +4,13 @@
 
 //var Lexer = require('./lexer.js');
 
-
+var preDis = 0;
+var preAdd = 0;
 function Parser () {
     this.token = [];
     this.cnt = 0;
     this.lexer = new Lexer();
+
 
     this.setInput = function (input) {
         this.lexer.setInput(input);
@@ -79,6 +81,26 @@ function Parser () {
             });
             code += "main();";
             return code;
+        };
+        node.genPcode = function () {
+            var command = [];
+            node.variable.forEach(function(ele,index) {
+                ele.order = index+3;
+            });
+            command.push(['JMP',0,-1]); //这个是为了修改main函数用的
+            command.push(['INT',0,node.variable.length+3]);
+            node.function.forEach(function (ele) {
+                ele.genPcode(command);
+            });
+            if(node.symbol['main'])
+                command[0][2] = node.symbol['main'].order;
+            else
+                throw Error('没有找到main函数');
+            var list = [];
+            command.forEach(function(ele) {
+                list.push(ele.join('\t'));
+            });
+            return list.join('\n');
         }
     };
 
@@ -136,6 +158,8 @@ function Parser () {
         child.symbol = {};
         if(this.read().value != '(') this.throwError("函数的参数应该以'('开始");
         child.parameter = [];
+        child.body = {};
+        child.variable = [];
         do {
             if(this.top().value == ')') break; //为了支持没有参数的函数
             if(this.top().value == ',') this.read();
@@ -151,11 +175,18 @@ function Parser () {
             child.symbol[ele.id] = ele;
         } while(this.top().value == ',');
         if(this.read().value != ')') this.throwError("函数的参数应该以')'结束");
-        child.body = {};
         child.body.parent = child;
+        child.body.symbol = child.symbol;
+        child.body.variable = child.variable;
         this.blockParser(child.body);
         node.function.push(child);
         node.symbol[child.id] = child;
+        child.genPcode = function(command) {
+            child.order = command.length;
+            command.push(['JMP',0,command.length]);
+            command.push(['INT',0,child.variable.length+3]);
+            //child.body.genPcode(command);
+        };
     };
 
     this.statementParser = function (node) {
@@ -215,9 +246,9 @@ function Parser () {
         node.type = "语句块";
         node.const = [];
         node.function = [];
-        node.variable = [];
+        node.variable = node.variable || [];
         node.statement = [];
-        node.symbol = {};
+        node.symbol =node.symbol || {};
         if(this.read().value != '{') {
             this.throwError("语句块的开始应该是'{'才对");
         }
@@ -247,7 +278,12 @@ function Parser () {
             });
             code += '}';
             return code;
-        }
+        };
+        node.genPcode = function(command) {
+            node.statement.forEach(function (ele) {
+                ele.genPcode(command);
+            });
+        };
     };
 
     this.expressParser = function (node) {
@@ -271,7 +307,12 @@ function Parser () {
             });
             code += ")";
             return code;
-        }
+        };
+        node.genPcode = function(command) {
+            node.elements.forEach(function(ele) {
+                ele.genPcode(command);
+            });
+        };
     };
 
     this.expStaParser = function (node) {
@@ -294,7 +335,12 @@ function Parser () {
             });
             code += ";";
             return code;
-        }
+        };
+        node.genPcode = function(command) {
+            node.elements.forEach(function(ele) {
+                ele.genPcode(command);
+            });
+        };
     };
 
     this.comExpParser = function(node) {
@@ -303,12 +349,12 @@ function Parser () {
         do {
             var child = {};
             child.parent = node;
-            if(this.top().value == '>' || this.top().value == '>=' || this.top().value == '<' || this.top().value == '<=' || this.top().value == '==') {
+            if(this.top().value == '>' || this.top().value == '>=' || this.top().value == '<' || this.top().value == '<=' || this.top().value == '==' || this.top().value == '!=') {
                 child.operator = this.read().value;
             }
             this.assignExpParser(child); //进入赋值表达式解析
             node.elements.push(child);
-        }while(this.top().value == '>' || this.top().value == '>=' || this.top().value == '<' || this.top().value == '<=' || this.top().value == '==');
+        }while(this.top().value == '>' || this.top().value == '>=' || this.top().value == '<' || this.top().value == '<=' || this.top().value == '==' || this.top().value == '!=');
         node.genJSCode = function() {
             var code = "";
             if(node.operator)code += node.operator;
@@ -318,7 +364,14 @@ function Parser () {
             });
             code += ")";
             return code;
-        }
+        };
+        node.genPcode = function(command) {
+            node.elements.forEach(function(ele) {
+                ele.genPcode(command);
+            });
+            if(node.operator == '||') command.push(['OPR',0,13]);
+            if(node.operator == '&&') command.push(['OPR',0,14]);
+        };
     };
 
     this.assignExpParser = function(node) {
@@ -342,7 +395,18 @@ function Parser () {
             });
             code += ")";
             return code;
-        }
+        };
+        node.genPcode = function(command) {
+            node.elements.forEach(function(ele) {
+                ele.genPcode(command);
+            });
+            if(node.operator == '==') command.push(['OPR',0,7]);
+            if(node.operator == '!=') command.push(['OPR',0,8]);
+            if(node.operator == '<') command.push(['OPR',0,9]);
+            if(node.operator == '>=') command.push(['OPR',0,10]);
+            if(node.operator == '>') command.push(['OPR',0,11]);
+            if(node.operator == '<=') command.push(['OPR',0,12]);
+        };
     };
 
     this.adExpParser = function (node) {
@@ -366,7 +430,13 @@ function Parser () {
             });
             code += ")";
             return code;
-        }
+        };
+        node.genPcode = function(command) {
+            node.elements.forEach(function(ele) {
+                ele.genPcode(command);
+            });
+            if(node.operator == '=') command.push(['STO',0,0]); //TODO:这里生成的赋值是有问题的
+        };
     };
 
     this.productExpParser = function (node) {
@@ -390,7 +460,14 @@ function Parser () {
             });
             code += ")";
             return code;
-        }
+        };
+        node.genPcode = function(command) {
+            node.elements.forEach(function(ele) {
+                ele.genPcode(command);
+            });
+            if(node.operator == '+') command.push(['OPR',0,2]);
+            if(node.operator == '-') command.push(['OPR',0,3]);
+        };
     };
 
     this.findID = function (node,id) {
@@ -405,6 +482,9 @@ function Parser () {
     this.factorParser = function (node) {
         node.type = "因子";
         node.value = {};
+        node.genPcode = function(command) {
+            command.push(['LOD',0,0]); //TODO:先到这儿吧
+        };
         switch (this.top().type) {
             case '标识符':
                 node.value = this.findID(node,this.read().value);
@@ -436,7 +516,7 @@ function Parser () {
                         if(node.operator)code += node.operator;
                         code += node.value.id;
                         return code;
-                    }
+                    };
                 }
                 break;
             case '数字':
